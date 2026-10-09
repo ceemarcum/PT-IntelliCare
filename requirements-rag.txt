@@ -1,0 +1,10 @@
+# RAG (converted from the Colab notebook). Install with:  py -m pip install -r requirements-rag.txt
+langchain
+langchain-community
+langchain-openai
+langchain-text-splitters
+langchain-chroma
+chromadb
+pypdf
+beautifulsoup4
+python-dotenv

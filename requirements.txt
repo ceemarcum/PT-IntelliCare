@@ -1,0 +1,28 @@
+# Web server
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+
+# Database and login
+SQLAlchemy==2.1.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose==3.5.0
+
+# Models and analytics
+numpy==2.5.3
+pandas==3.0.6
+scikit-learn==1.9.1
+joblib==1.6.0
+matplotlib==3.11.2
+
+# RAG
+langchain==1.4.2
+langchain-community==0.4.2
+langchain-core==1.6.5
+langchain-openai==1.6.6
+langchain-text-splitters==1.1.2
+langchain-chroma==1.1.0
+chromadb==1.5.9
+beautifulsoup4==4.15.0
+pypdf==6.19.0
+python-dotenv==1.2.3

@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Databases (created when the app runs)
+*.db
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Editor
+.vscode/
+
+# React packages (reinstalled with npm install)
+frontend-react/node_modules/
+
+# Not part of the project
+Claude outputs/
+installed.txt
+
+# Source PDFs (copyrighted; the RAG uses chroma_db built from them)
+data/pdfs/

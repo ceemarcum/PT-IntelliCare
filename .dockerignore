@@ -1,0 +1,24 @@
+# Secrets: never put these in the image
+.env
+
+# Local databases (the cloud app starts fresh)
+*.db
+
+# Python and editor leftovers
+__pycache__/
+*.pyc
+.vscode/
+installed.txt
+
+# Not needed to run the app
+tests/
+*.ipynb
+frontend/
+frontend-react/node_modules/
+frontend-react/src/
+database/
+data/pdfs/
+data/Pain Data.xlsx
+random_forest/
+autoencoder/*.h5
+Claude outputs/

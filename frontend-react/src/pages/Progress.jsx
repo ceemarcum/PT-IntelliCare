@@ -1,0 +1,161 @@
+// Step 4: progress dashboard. Read-only: it never changes the exercise level.
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { api } from "../lib/api.js";
+import { profile, painToSeverity } from "../lib/state.js";
+import { useApp } from "../lib/AppContext.jsx";
+import { cap, daysSince, fmtDate, fmtTime, mobilityWord, painWord, toDate } from "../lib/format.js";
+import { Loading, NeedsStep, Notice, PageHead } from "../components/ui.jsx";
+import LineChart from "../components/LineChart.jsx";
+import { ProfilePrompt } from "../components/ProfileFields.jsx";
+
+const WEEK = 7 * 86400000;
+
+export default function Progress() {
+  const { status: s, refreshStatus } = useApp();
+  const [hasProfile, setHasProfile] = useState(profile.isComplete());
+  const [recovery, setRecovery] = useState(null);     // { ok, data | error }
+  const [typical, setTypical] = useState(null);
+
+  useEffect(() => { refreshStatus(); }, [refreshStatus]);
+
+  const first = s?.history[0], latest = s?.history[s.history.length - 1];
+  const injury = s?.injuries[0];
+
+  // Models: recovery model, Linear Regression (how long) and autoencoder (typical or unusual)
+  useEffect(() => {
+    if (!latest || !hasProfile) return;
+    const p = profile.get();
+    const startSeverity = painToSeverity(injury ? injury.pain_level : first.score);
+    api.predictRecovery(Number(p.age), startSeverity, p.exercise_frequency)
+      .then(data => setRecovery({ ok: true, data })).catch(err => setRecovery({ ok: false, error: err.message }));
+    api.anomalyCheck(Number(p.age), painToSeverity(latest.score), p.exercise_frequency)
+      .then(data => setTypical({ ok: true, data })).catch(err => setTypical({ ok: false, error: err.message }));
+  }, [latest?.id, injury?.id, hasProfile]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!s) return <Loading />;
+  if (!s.history.length) {
+    return <><PageHead eyebrow="Step 4 of 5" title="Your progress" />
+      <NeedsStep text="Your progress shows up after your first check-in."
+        to={s.hasInjury ? "/checkin" : "/injury"}
+        label={s.hasInjury ? "Go to step 2: Daily check-in" : "Go to step 1: Report injury"} /></>;
+  }
+
+  const shortSpan = toDate(latest.timestamp) - toDate(first.timestamp) < 2 * 86400000;
+  const points = s.history.map(h => ({
+    date: toDate(h.timestamp),
+    label: shortSpan ? fmtTime(h.timestamp) : fmtDate(h.timestamp),
+    tip: `${fmtDate(h.timestamp)}, ${fmtTime(h.timestamp)}`,
+    values: { pain: h.score, mobility: h.mobility },
+  }));
+
+  return (
+    <>
+      <PageHead eyebrow="Step 4 of 5" title="Your progress" lede={`Since your first check-in on ${fmtDate(first.timestamp)}.`} />
+
+      <div className="tiles">
+        <Tile label="Pain now" value={latest.score} word={painWord(latest.score)} change={latest.score - first.score} lowerIsBetter />
+        <Tile label="Mobility now" value={latest.mobility} word={mobilityWord(latest.mobility)} change={latest.mobility - first.mobility} />
+        <div className="tile">
+          <div className="tile-label">Check-ins</div>
+          <div className="tile-value">{s.checkins}</div>
+          <div className="tile-note">{injury && `Over ${daysSince(injury.date_reported) + 1} day(s)`}</div>
+        </div>
+        <div className="tile">
+          <div className="tile-label">Exercise level</div>
+          <div className="tile-value" style={{ fontSize: "1.4rem", padding: "6px 0 3px" }}>{s.hasPlan ? cap(s.state.level) : "Not set"}</div>
+          <div className="tile-note"><Link to="/exercises">{s.hasPlan ? "Update plan" : "Get exercises"}</Link></div>
+        </div>
+      </div>
+
+      <section className="card" aria-labelledby="trend-title">
+        <div className="card-head">
+          <h2 id="trend-title">Pain and mobility over time</h2>
+          <span className="small muted">Lower pain and higher mobility mean you're improving</span>
+        </div>
+        <LineChart points={points} series={[
+          { key: "pain", name: "Pain", color: "var(--series-1)" },
+          { key: "mobility", name: "Mobility", color: "var(--series-2)" },
+        ]} />
+        <details style={{ marginTop: 10 }}>
+          <summary className="small">Show as a table</summary>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Pain</th><th>Mobility</th></tr></thead>
+              <tbody>{s.history.map(h => (
+                <tr key={h.id}><td>{fmtDate(h.timestamp)} {fmtTime(h.timestamp)}</td><td>{h.score}</td><td>{h.mobility}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <div className="grid-2">
+        <section className="card" aria-labelledby="timeline-title">
+          <h2 id="timeline-title">Recovery timeline</h2>
+          {!hasProfile ? <ProfilePrompt onSave={() => setHasProfile(true)} />
+            : <Timeline result={recovery} start={injury ? injury.date_reported : first.timestamp} />}
+        </section>
+        <section className="card" aria-labelledby="typical-title">
+          <h2 id="typical-title">Is my recovery typical?</h2>
+          {!hasProfile ? <p className="muted">Answer the questions on the left to see this.</p> : <Typical result={typical} />}
+        </section>
+      </div>
+    </>
+  );
+}
+
+function Tile({ label, value, word, change, lowerIsBetter = false }) {
+  const better = lowerIsBetter ? change < 0 : change > 0;
+  return (
+    <div className="tile">
+      <div className="tile-label">{label}</div>
+      <div className="tile-value">{value}<small> / 10</small></div>
+      <div className="tile-note">
+        {word}
+        {change !== 0 && <> · <span className={better ? "delta-good" : "delta-bad"}>
+          {change > 0 ? "▲" : "▼"} {Math.abs(change)} since start</span></>}
+      </div>
+    </div>
+  );
+}
+
+function Timeline({ result, start }) {
+  if (!result) return <Loading />;
+  if (!result.ok) return <Notice kind="warn" title="Estimate unavailable"><p>{result.error}</p></Notice>;
+  const r = result.data;
+  const weeks = Math.max(0, (Date.now() - toDate(start)) / WEEK);
+  const pct = Math.min(weeks / r.predicted_recovery_weeks, 1) * 100;
+  const [lo, hi] = r.likely_range_weeks;
+  const done = new Date(toDate(start).getTime() + r.predicted_recovery_weeks * WEEK);
+  return (
+    <>
+      <p style={{ fontSize: "1.1rem", marginBottom: 10 }}>
+        <strong>Week {Math.floor(weeks) + 1}</strong> of about <strong>{Math.round(r.predicted_recovery_weeks)} weeks</strong>
+      </p>
+      <div className="progress-bar" role="progressbar" aria-label="Recovery timeline" aria-valuemin="0" aria-valuemax="100"
+        aria-valuenow={Math.round(pct)}><span style={{ width: `${pct}%` }} /></div>
+      <p className="small muted" style={{ marginTop: 10 }}>
+        Expected around <strong>{done.toLocaleDateString(undefined, { month: "long", day: "numeric" })}</strong>.
+        Most people like you take {Math.round(lo)} to {Math.round(hi)} weeks.
+      </p>
+      {weeks > hi && <Notice kind="warn" title="Taking longer than expected"><p>Check in with your physical therapist about your plan.</p></Notice>}
+      <p className="small muted">Estimate from the recovery model, based on your starting pain, age and exercise habits.</p>
+    </>
+  );
+}
+
+function Typical({ result }) {
+  if (!result) return <Loading />;
+  if (!result.ok) return <Notice kind="warn" title="Check unavailable"><p>{result.error}</p></Notice>;
+  const r = result.data;
+  return (
+    <>
+      {r.is_anomaly
+        ? <Notice kind="warn" title="Your profile looks unusual">
+            <p>{r.message} Your plan pauses moving up until this settles. Talk with your physical therapist.</p></Notice>
+        : <Notice kind="good" title="Yes, it looks typical"><p>{r.message}</p></Notice>}
+      <p className="small muted">Compares your current pain, age and exercise habits with the survey group.</p>
+    </>
+  );
+}

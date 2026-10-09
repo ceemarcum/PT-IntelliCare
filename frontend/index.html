@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PT IntelliCare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="brand" href="#/home" aria-label="PT IntelliCare home">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="currentColor"/>
+        <path d="M8 20.5c3-1 4.5-6.5 8-6.5s4 4.5 8 3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+        <circle cx="24" cy="11" r="2.4" fill="#fff"/>
+      </svg>
+      <span>PT IntelliCare</span>
+    </a>
+    <div class="topbar-user" id="topbar-user" hidden>
+      <span id="user-name"></span>
+      <button class="btn btn-ghost btn-sm" id="sign-out" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="sidenav" id="sidenav" aria-label="Main" hidden>
+      <ol>
+        <li><a href="#/home" data-route="home"><span class="nav-num" aria-hidden="true">⌂</span>My plan</a></li>
+        <li><a href="#/injury" data-route="injury"><span class="nav-num" aria-hidden="true">1</span>Report injury</a></li>
+        <li><a href="#/checkin" data-route="checkin"><span class="nav-num" aria-hidden="true">2</span>Daily check-in</a></li>
+        <li><a href="#/exercises" data-route="exercises"><span class="nav-num" aria-hidden="true">3</span>Exercises</a></li>
+        <li><a href="#/progress" data-route="progress"><span class="nav-num" aria-hidden="true">4</span>Progress</a></li>
+        <li><a href="#/insurance" data-route="insurance"><span class="nav-num" aria-hidden="true">5</span>Insurance</a></li>
+      </ol>
+    </nav>
+
+    <main id="main" tabindex="-1"></main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

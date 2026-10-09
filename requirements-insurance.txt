@@ -1,0 +1,4 @@
+# Insurance Analytics (Step 6): py -m pip install -r requirements-insurance.txt
+pandas
+numpy
+matplotlib

@@ -97,7 +97,7 @@ export default function Progress() {
             : <Timeline result={recovery} start={injury ? injury.date_reported : first.timestamp} />}
         </section>
         <section className="card" aria-labelledby="typical-title">
-          <h2 id="typical-title">Is my recovery typical?</h2>
+          <h2 id="typical-title">Is my pain profile typical?</h2>
           {!hasProfile ? <p className="muted">Answer the questions on the left to see this.</p> : <Typical result={typical} />}
         </section>
       </div>
@@ -154,7 +154,7 @@ function Typical({ result }) {
       {r.is_anomaly
         ? <Notice kind="warn" title="Your profile looks unusual">
             <p>{r.message} Your plan pauses moving up until this settles. Talk with your physical therapist.</p></Notice>
-        : <Notice kind="good" title="Yes, it looks typical"><p>{r.message}</p></Notice>}
+        : <Notice kind="good" title="Your profile looks typical"><p>{r.message}</p></Notice>}
       <p className="small muted">Compares your current pain, age and exercise habits with the survey group.</p>
     </>
   );

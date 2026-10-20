@@ -32,9 +32,10 @@ Answer in exactly this format:
 - one movement per line (2 to 4 lines)
 
 Rules:
-- Every exercise must be a specific, named exercise found in the context below (for example "chin tucks", not "gentle neck stretches"). Do not invent exercises.
+- Use exercises from the context below. If the context describes an exercise without a formal name, give it a short, specific name (for example "seated knee straightening", not "gentle knee exercise").
 - Use the sets, reps or hold times from the context. If the context gives none for an exercise, write "amount: as advised by your physical therapist" instead of making numbers up.
-- If the context has no exercises for this body part, say so in one sentence instead of giving general advice.
+- If the context has fewer than 3 exercises for this body part, add common, low-risk physical therapy exercises for it to reach 3, and put "(general suggestion, not from the sources)" after each one you add.
+- If the context doesn't name movements to avoid, list 2 to 3 movements commonly limited for this injury and put "(general suggestion)" after each.
 - Do not diagnose. If pain is 8/10 or higher, or there is numbness, tingling or inability to bear weight, add a final line advising them to see a doctor or physical therapist before exercising.
 
 Context:
@@ -46,7 +47,7 @@ Question:
 Answer:
 """
 
-K = 6   # chunks retrieved per question
+K = 8   # chunks retrieved per question
 
 # Safety: added by the code itself, so it never depends on the AI remembering the rule
 HIGH_PAIN = 8
@@ -81,7 +82,7 @@ def load():
             raise RuntimeError("The vector store isn't built yet. Run: py -m rag.build_index")
         vectorstore = Chroma(persist_directory=str(CHROMA_DIR),
                              embedding_function=OpenAIEmbeddings(model=EMBEDDING_MODEL))
-        llm = ChatOpenAI(model=CHAT_MODEL, temperature=0)
+        llm = ChatOpenAI(model=CHAT_MODEL)
 
 
 def rag_query(question, search_query=None):

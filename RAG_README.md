@@ -6,7 +6,7 @@ The Colab notebook, converted to run inside this FastAPI backend.
 |---|---|
 | Load PDFs + websites (PyPDFLoader, RecursiveUrlLoader, BeautifulSoup) | `rag/build_index.py` |
 | Chunk (512 / 50) + embed (OpenAI) + Chroma | `rag/build_index.py`, saved to `chroma_db/` |
-| Retrieve (k=4) + prompt + gpt-4o-mini | `rag/guidance.py` |
+| Retrieve (k=6) + prompt + gpt-6-luna | `rag/guidance.py` |
 | `exercise_guidance(injury, pain_level, symptoms)` | `rag/guidance.py`, served by `routes/rag_routes.py` |
 
 What changed from Colab:

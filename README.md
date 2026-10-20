@@ -31,7 +31,7 @@ The first sign-in on a browser asks for age and exercise habits (try 30 and "I e
 |---|---|
 | Backend | Python 3.12, FastAPI, SQLAlchemy, SQLite, JWT auth (python-jose, passlib/bcrypt) |
 | Machine learning | scikit-learn (Linear Regression), TensorFlow/Keras autoencoder served with NumPy, pandas |
-| RAG | LangChain, OpenAI embeddings and gpt-4o-mini, Chroma vector store |
+| RAG | LangChain, OpenAI embeddings and gpt-6-luna, Chroma vector store |
 | Frontend | React, Vite, React Router, custom SVG charts |
 | Testing | pytest (77 tests) |
 | Deployment | Docker, Google Cloud Run, Cloud Build, Artifact Registry, Secret Manager |

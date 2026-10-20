@@ -25,7 +25,7 @@ WEBSITES = [
 ]
 
 EMBEDDING_MODEL = "text-embedding-3-small"
-CHAT_MODEL = "gpt-4o-mini"
+CHAT_MODEL = "gpt-6-luna"
 
 
 def check_api_key():

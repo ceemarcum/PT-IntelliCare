@@ -60,8 +60,8 @@ def build():
 
     # Preprocess text/descriptions
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=512,
-        chunk_overlap=50,
+        chunk_size=1000,      
+        chunk_overlap=100,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
     chunks = splitter.split_documents(all_documents)

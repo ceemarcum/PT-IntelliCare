@@ -11,8 +11,8 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from monitoring.metrics import record_rag
 
-from rag.config import CHROMA_DIR, EMBEDDING_MODEL, CHAT_MODEL, check_api_key
-
+from rag.config import (CHROMA_DIR, EMBEDDING_MODEL, CHAT_MODEL, check_api_key, AAOS_CREDIT, AAOS_DISCLAIMER, WWL_CREDIT)
+ 
 PROMPT_TEMPLATE = """
 You are a supportive physical therapy assistant. Address the patient directly and briefly acknowledge their pain level and symptoms in one sentence.
 
@@ -93,14 +93,26 @@ def rag_query(question, search_query=None):
     prompt = PROMPT_TEMPLATE.format(context=context, question=question)
     response = llm.invoke(prompt)
     # web pages keep their link; PDFs show the file name and page
+        # web pages keep their link; PDFs show the file name and page;
+    # permission-only handouts show the credit their publisher asked for
     sources = []
+    uses_aaos = False
     for c in chunks:
         src = c.metadata.get("source", "")
-        if not src.startswith("http"):
-            src = f"{os.path.basename(src)}, page {c.metadata.get('page', 0) + 1}"
+        name = src.replace("\\", "/").rsplit("/", 1)[-1]   # file name, even for Windows paths on Cloud Run
+        if name.startswith("aaos-"):
+            uses_aaos = True
+            src = AAOS_CREDIT
+        elif name.startswith("wwl-"):
+            src = WWL_CREDIT
+        elif not src.startswith("http"):
+            src = f"{name}, page {c.metadata.get('page', 0) + 1}"
         if src not in sources:
             sources.append(src)
-    return response.content, sources
+    answer = response.content
+    if uses_aaos:
+        answer = f"{answer.rstrip()}\n\n{AAOS_DISCLAIMER}"
+    return answer, sources
 
 
 def exercise_guidance(injury, pain_level, symptoms="", level=None):

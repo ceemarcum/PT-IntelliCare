@@ -90,7 +90,7 @@ py -m uvicorn main:app --reload
 - API docs: http://127.0.0.1:8000/docs
 - Load the demo patients: `py -m insurance.demo_seed`
 
-The RAG vector store (`chroma_db/`) is included. The source PDFs are not, so rebuilding it with `py -m rag.build_index` needs them added to `data/pdfs/` first (see [RAG_README.md](RAG_README.md)).
+The RAG vector store (`chroma_db/`) and the source PDFs are not included in this repo, because some sources are used with permission and can't be shared publicly. To run the RAG locally, add PDFs to `data/pdfs/`, list them in `rag/config.py`, and build the index with `py -m rag.build_index` (see [RAG_README.md](RAG_README.md)).
 
 To change the React code, see [FRONTEND_README.md](FRONTEND_README.md).
 
@@ -140,4 +140,6 @@ data/                   Survey data and simulated recovery history
 
 - `data/Pain Data.xlsx`: survey responses on pain severity and exercise habits
 - `data/historical_recovery.csv`: simulated patient recovery times shaped by the survey, used to train the recovery model and as the insurance comparison group
-- RAG sources: physical therapy PDFs plus MedlinePlus and NIAMS web pages
+- RAG sources: MedlinePlus and NIAMS web pages, WHO and NIA guides, plus exercise handouts used with permission (not included in this repo):
+  - Knee and shoulder conditioning programs: Reproduced with permission from OrthoInfo © American Academy of Orthopaedic Surgeons. https://orthoinfo.org
+  - Low back and neck exercise leaflets (Levels 1 to 3): Wrightington, Wigan and Leigh Teaching Hospitals NHS Foundation Trust, used with permission

@@ -21,3 +21,6 @@ installed.txt
 
 # Source PDFs (copyrighted; the RAG uses chroma_db built from them)
 data/pdfs/
+
+# RAG index: contains the text of permission-only sources, so it stays off GitHub
+chroma_db/

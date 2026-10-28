@@ -49,6 +49,49 @@ Answer:
 
 K = 8   # chunks retrieved per question
 
+# Exercise handouts (used with permission), matched to the injury and level.
+# The WWL leaflets come in Levels 1 to 3: beginner uses Level 1, and so on.
+LEAFLET_LEVEL = {"beginner": "1", "intermediate": "2", "advanced": "3"}
+HANDOUT_CHUNKS = 4   # chunks taken from the matching handout, on top of the normal search
+
+
+def handout_for(injury, level=None):
+    """The file name of the handout that fits this injury and level, or None."""
+    injury = (injury or "").lower()
+    n = LEAFLET_LEVEL.get(level, "1")
+    if "knee" in injury:
+        return "aaos-knee-conditioning.pdf"
+    if "shoulder" in injury or "rotator" in injury:
+        return "aaos-shoulder-conditioning.pdf"
+    if "neck" in injury or "upper back" in injury:
+        return f"wwl-neck-level-{n}.pdf"
+    if "back" in injury or "spine" in injury or "lumbar" in injury:
+        return f"wwl-low-back-level-{n}.pdf"
+    return None
+
+
+def file_name(chunk):
+    return chunk.metadata.get("source", "").replace("\\", "/").rsplit("/", 1)[-1]
+
+
+def is_handout(chunk):
+    return file_name(chunk).startswith(("aaos-", "wwl-"))
+
+
+_sources = None   # file name -> source path as stored in the index (filled on first use)
+
+
+def handout_chunks(handout, query):
+    """The handout's chunks that best match the query (searched only inside that handout)."""
+    global _sources
+    if _sources is None:
+        stored = vectorstore.get(include=["metadatas"])["metadatas"]
+        _sources = {m.get("source", "").replace("\\", "/").rsplit("/", 1)[-1]: m.get("source") for m in stored}
+    source = _sources.get(handout)
+    if not source:
+        return []
+    return vectorstore.similarity_search(query, k=HANDOUT_CHUNKS, filter={"source": source})
+
 # Safety: added by the code itself, so it never depends on the AI remembering the rule
 HIGH_PAIN = 8
 RED_FLAGS = ["numb", "tingl", "pins and needles", "can't bear weight", "cannot bear weight", "unable to bear weight",
@@ -85,21 +128,28 @@ def load():
         llm = ChatOpenAI(model=CHAT_MODEL)
 
 
-def rag_query(question, search_query=None):
-    """search_query: what to look up in the vector store (defaults to the question itself)."""
+def rag_query(question, search_query=None, handout=None):
+    """search_query: what to look up in the vector store (defaults to the question itself).
+    handout: file name of the exercise handout for this injury and level (always searched)."""
     load()
-    chunks = vectorstore.similarity_search(search_query or question, k=K)
+    query = search_query or question
+    chunks = handout_chunks(handout, query) if handout else []
+    # the normal search, without other handouts (another body part or level would mislead the answer)
+    for c in vectorstore.similarity_search(query, k=K * 2):
+        if len(chunks) >= K:
+            break
+        if not is_handout(c) and c not in chunks:
+            chunks.append(c)
     context = "\n\n---\n\n".join([c.page_content for c in chunks])
     prompt = PROMPT_TEMPLATE.format(context=context, question=question)
     response = llm.invoke(prompt)
-    # web pages keep their link; PDFs show the file name and page
-        # web pages keep their link; PDFs show the file name and page;
+    # web pages keep their link; PDFs show the file name and page;
     # permission-only handouts show the credit their publisher asked for
     sources = []
     uses_aaos = False
     for c in chunks:
         src = c.metadata.get("source", "")
-        name = src.replace("\\", "/").rsplit("/", 1)[-1]   # file name, even for Windows paths on Cloud Run
+        name = file_name(c)   # file name, even for Windows paths on Cloud Run
         if name.startswith("aaos-"):
             uses_aaos = True
             src = AAOS_CREDIT
@@ -129,7 +179,7 @@ def exercise_guidance(injury, pain_level, symptoms="", level=None):
     
     start = time.perf_counter()
     try:
-        answer, sources = rag_query(question, search_query)
+        answer, sources = rag_query(question, search_query, handout_for(injury, level))
     except Exception as exc:                      # record the failure for monitoring, then pass it on
         record_rag(False, round(time.perf_counter() - start, 2), error=repr(exc))
         raise

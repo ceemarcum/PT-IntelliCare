@@ -19,9 +19,16 @@ class FakeStore:
     def __init__(self):
         self.query, self.k = None, None
 
-    def similarity_search(self, query, k):
+    def get(self, include=None):
+        return {"metadatas": [{"source": "C:\\data\\pdfs\\wwl-low-back-level-1.pdf"}]}
+
+    def similarity_search(self, query, k, filter=None):
+        if filter:                                     # search inside one handout
+            self.filter = filter
+            return [Doc("Pelvic tilts (sitting): 10 times.", filter["source"])]
         self.query, self.k = query, k
-        return [Doc("Chin tucks: hold 5 seconds, 10 times.", "C:/data/pdfs/guide.pdf", 2),
+        return [Doc("Wrong level: front plank.", "C:\\data\\pdfs\\wwl-low-back-level-3.pdf"),
+                Doc("Chin tucks: hold 5 seconds, 10 times.", "C:/data/pdfs/guide.pdf", 2),
                 Doc("Neck rotations: 10 each side.", "C:/data/pdfs/guide.pdf", 2),      # same page: listed once
                 Doc("Neck pain overview.", "https://medlineplus.gov/neckinjuriesanddisorders.html")]
 
@@ -40,6 +47,7 @@ def fakes(monkeypatch):
     store, llm = FakeStore(), FakeLLM()
     monkeypatch.setattr(g, "vectorstore", store)
     monkeypatch.setattr(g, "llm", llm)
+    monkeypatch.setattr(g, "_sources", None)
     return store, llm
 
 
@@ -47,7 +55,7 @@ def test_searches_for_exercises_not_the_whole_sentence(fakes):
     store, _ = fakes
     g.exercise_guidance("neck", 2, "stiffness", level="intermediate")
     assert store.query.startswith("neck exercises")
-    assert store.k == 6
+    assert store.k == g.K * 2          # extra chunks, so other handouts can be left out
 
 
 def test_question_includes_injury_pain_symptoms_and_level(fakes):
@@ -63,8 +71,8 @@ def test_prompt_asks_for_named_exercises_in_a_list(fakes):
     g.exercise_guidance("knee", 6, "swelling", level="beginner")
     assert "**Start with these exercises**" in llm.prompt
     assert "**Avoid these movements for now**" in llm.prompt
-    assert "specific, named exercise" in llm.prompt
-    assert "Do not invent exercises" in llm.prompt
+    assert "Use exercises from the context" in llm.prompt
+    assert "(general suggestion, not from the sources)" in llm.prompt
 
 
 def test_prompt_includes_the_safety_rule(fakes):
@@ -96,3 +104,19 @@ def test_no_safety_warning_when_not_needed(fakes, pain, symptoms):
     r = g.exercise_guidance("knee", pain, symptoms)
     assert r["safety_warning"] is None and "see a doctor" not in r["guidance"]
 
+
+@pytest.mark.parametrize("injury,level,handout", [
+    ("lower back", "beginner", "wwl-low-back-level-1.pdf"), ("back", "advanced", "wwl-low-back-level-3.pdf"),
+    ("neck", "intermediate", "wwl-neck-level-2.pdf"), ("knee", "beginner", "aaos-knee-conditioning.pdf"),
+    ("shoulder", None, "aaos-shoulder-conditioning.pdf"), ("ankle", "beginner", None)])
+def test_handout_matches_injury_and_level(injury, level, handout):
+    assert g.handout_for(injury, level) == handout
+
+
+def test_matching_handout_is_always_searched_and_other_handouts_dropped(fakes):
+    store, llm = fakes
+    r = g.exercise_guidance("lower back", 5, level="beginner")
+    assert store.filter == {"source": "C:\\data\\pdfs\\wwl-low-back-level-1.pdf"}
+    assert "Pelvic tilts (sitting)" in llm.prompt                 # from the Level 1 leaflet
+    assert "Wrong level" not in llm.prompt                         # Level 3 chunk left out
+    assert r["sources"][0].startswith("Exercise leaflets from Wrightington")

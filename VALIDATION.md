@@ -1,6 +1,6 @@
 # Step 8: Testing & Validation
 
-**Result: 77 automated tests, all passing.** Run them from the Capstone_Backend folder:
+**Result: 84 automated tests, all passing.** Run them from the Capstone_Backend folder:
 
 ```
 py -m pip install -r requirements-test.txt

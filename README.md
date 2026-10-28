@@ -33,7 +33,7 @@ The first sign-in on a browser asks for age and exercise habits (try 30 and "I e
 | Machine learning | scikit-learn (Linear Regression), TensorFlow/Keras autoencoder served with NumPy, pandas |
 | RAG | LangChain, OpenAI embeddings and gpt-6-luna, Chroma vector store |
 | Frontend | React, Vite, React Router, custom SVG charts |
-| Testing | pytest (77 tests) |
+| Testing | pytest (84 tests) |
 | Deployment | Docker, Google Cloud Run, Cloud Build, Artifact Registry, Secret Manager |
 | Monitoring | Cloud Run metrics, Cloud Logging (structured JSON logs), Cloud Monitoring uptime check and alerts |
 
@@ -101,7 +101,7 @@ py -m pip install -r requirements-test.txt
 py -m pytest -v
 ```
 
-77 tests cover each model, the RAG prompt and safety warning, the engine rules, the insurance calculations and a full patient journey through the API. They use a temporary database and a fake RAG answer, so they make no OpenAI calls. Results are in [VALIDATION.md](VALIDATION.md).
+84 tests cover each model, the RAG prompt and safety warning, the engine rules, the insurance calculations and a full patient journey through the API. They use a temporary database and a fake RAG answer, so they make no OpenAI calls. Results are in [VALIDATION.md](VALIDATION.md).
 
 ## Deploy to Google Cloud Run
 
